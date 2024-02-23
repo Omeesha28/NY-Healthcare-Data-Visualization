@@ -10,7 +10,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(myMap);
 
 // Use this link to get the GeoJSON data.
-let link = "/NY-Healthcare-Data-Visualization/Resources/NY_Health_Facility_Lat_Long.csv";
+let link = "Resources/NY_Health_Facility_Lat_Long.csv";
 
 // Getting our CSV data
 d3.csv(link).then(function(data) {
