@@ -10,10 +10,40 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(myMap);
 
 // Use this link to get the GeoJSON data.
-let link = "https://2u-data-curriculum-team.s3.amazonaws.com/dataviz-classroom/v1.1/15-Mapping-Web/nyc.geojson";
+let link = "/NY-Healthcare-Data-Visualization/Resources/NY_Health_Facility_Lat_Long.csv";
 
-// Getting our GeoJSON data
-d3.json(link).then(function(data) {
-  // Creating a GeoJSON layer with the retrieved data
-  L.geoJson(data).addTo(myMap);
+// Getting our CSV data
+d3.csv(link).then(function(data) {
+  // Transform CSV data to GeoJSON format
+  let geojson = {
+    type: "FeatureCollection",
+    features: data.map(function(d) {
+      return {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [parseFloat(d.Latitude), parseFloat(d.Longitude)]
+        },
+        properties: d
+      };
+    })
+  };
+
+  // Creating a GeoJSON layer with the transformed data and adding it to the map
+  L.geoJson(geojson).addTo(myMap);
+}).catch(function(error) {
+  // Handle error loading CSV
+  console.log("Error loading CSV:", error);
 });
+
+// Creating a new marker:
+// We pass in some initial options, and then add the marker to the map by using the addTo() method.
+let marker = L.marker([45.52, -122.67], {
+  draggable: true,
+  title: "My First Marker"
+}).addTo(myMap);
+
+// Binding a popup to our marker
+marker.bindPopup("Hello There!");
+
+
