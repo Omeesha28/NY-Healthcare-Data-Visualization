@@ -11,6 +11,41 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // Parse CSV data and create heat map
 let csvData = 'Resources/heatmap.csv';
+  
+// Getting our CSV data
+d3.csv(csvData).then(function(data) {
+
+  // Transform CSV data to GeoJSON format
+  let geojson = {
+    type: "FeatureCollection",
+    features: data.map(function(d) {
+      return {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [parseFloat(d.Longitude), parseFloat(d.Latitude)]
+        },
+        properties: {
+          Intenity: d["Count"]
+        }
+      };
+    })
+  };
+
+  // Creating a GeoJSON layer with the transformed data and adding it to the map
+  L.geoJson(geojson, {
+    onEachFeature: function(feature, layer) {
+      // Add popup to each marker
+      let popupContent = `
+        <b>Itenity:</b> ${feature.properties.Intenity}<br>
+      `;
+      layer.bindPopup(popupContent);
+    }
+  }).addTo(myMap);
+}).catch(function(error) {
+  // Handle error loading CSV or converting to GeoJSON
+  console.log("Error:", error);
+})
 
 // Split the CSV data into rows
 let rows = csvData.split('\n');
@@ -22,8 +57,8 @@ let heatMapData = [];
 for (let i = 1; i < rows.length; i++) {
   // Split each row into columns
   let columns = rows[i].split(',');
-
-  // Extract latitude, longitude, and count from the columns
+  if (location) {  
+    // Extract latitude, longitude, and count from the columns
   let latitude = parseFloat(columns[3]);
   let longitude = parseFloat(columns[4]);
   let count = parseInt(columns[2]);
@@ -31,7 +66,7 @@ for (let i = 1; i < rows.length; i++) {
 
   // Push latitude, longitude, and count as an array to the heat map data
   heatMapData.push([latitude, longitude, count, Payment_Typology]);
-}
+}}
 
 // Create heat map layer using Leaflet.heat plugin
 let heat = L.heatLayer(heatMapData, {
