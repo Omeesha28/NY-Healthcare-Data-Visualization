@@ -1,6 +1,7 @@
+// Initialize Leaflet map
 let myMap = L.map("map", {
-  center: [40.7128, -74.0059],
-  zoom: 50
+  center: [42.8, -75.0], // Center the map somewhere in New York State
+  zoom: 7 // Adjust the zoom level accordingly
 });
 
 // Adding the tile layer
@@ -8,27 +9,32 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(myMap);
 
-let link = "Resources/heatmap.csv";
+// Parse CSV data and create heat map
+let csvData = 'Resources/heatmap.csv';
 
-d3.json(url).then(function(response) {
+// Split the CSV data into rows
+let rows = csvData.split('\n');
 
-  console.log(response);
-  features = response.;
+// Define an array to store heat map data
+let heatMapData = [];
 
-  let heatArray = [];
+// Iterate over each row (starting from index 1 to skip the header row)
+for (let i = 1; i < rows.length; i++) {
+  // Split each row into columns
+  let columns = rows[i].split(',');
 
-  for (let i = 0; i < features.length; i++) {
-    let location = features[i].geometry;
-    if (location) {
-      //console.log(location);
-      heatArray.push([location.coordinates[1], location.coordinates[0]]);
-    }
+  // Extract latitude, longitude, and count from the columns
+  let latitude = parseFloat(columns[3]);
+  let longitude = parseFloat(columns[4]);
+  let count = parseInt(columns[2]);
+  let Payment_Typology = parseInt(columns[1]);
 
-  }
+  // Push latitude, longitude, and count as an array to the heat map data
+  heatMapData.push([latitude, longitude, count, Payment_Typology]);
+}
 
-  let heat = L.heatLayer(heatArray, {
-    radius: 20,
-    blur: 35
-  }).addTo(myMap);
-
-});
+// Create heat map layer using Leaflet.heat plugin
+let heat = L.heatLayer(heatMapData, {
+  radius: 20, // Set the radius of each heat point
+  blur: 35 // Set the blur factor for the heat map layer
+}).addTo(myMap);
