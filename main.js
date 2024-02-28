@@ -32,11 +32,7 @@ let myMap = L.map("map", {
           properties: {
             name: d["Facility Name"],
             RaceCount: d["Race Count"],
-            Gender: d["F,M,U"],
             TotalPatients:  d["Total Count"],
-            Payment1: d["Payment Type"],
-            Payment2: d["Payment Count 2"],
-            Payment3: d["Payment Count 3"],
             TotalCharges: d["Total Charges"],
             TotalCosts: d["Total Costs"]
           }
@@ -51,11 +47,7 @@ let myMap = L.map("map", {
         let popupContent = `
           <b>Name:</b> ${feature.properties.name}<br>
           <b>Race:</b> ${feature.properties.RaceCount}<br>
-          <b>Gender:</b> ${feature.properties.Gender}<br>
           <b>Total Patients:</b> ${feature.properties.TotalPatients}<br>
-          <b>Payment Count 1: ${feature.properties.Payment1}</b>
-          <b>Payment Count 2: ${feature.properties.Payment2}</b>
-          <b>Payment Count 3: ${feature.properties.Payment3}</b>
           <b>Total Charges: ${feature.properties.TotalCharges}</b>
           <b>Total Costs: ${feature.properties.TotalCosts}</b>
         `;
