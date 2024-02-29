@@ -25,6 +25,26 @@ function populateDropdown(data, dropdownId, field) {
     });
 }
 
+function extractPaymentData(paymentString) {
+    const paymentData = {};
+    const regex = /\(([^)]+)\)/g;
+    let match;
+    
+    while((match = regex.exec(paymentString)) !==null) {
+        const [, content] = match;
+        const [type, countString] = content.split(' ').filter(str => str.trim() !== '');
+        const count= parseInt(countString, 10);
+
+        if (!isNaN(count)) {
+            paymentData[type]=count;
+        }
+    }
+
+    console.log(paymentData);
+    
+    return paymentData;
+    
+}
 // Function to create and display metadata information
 function displayMetadata(selectedFacilityData) {
     const sampleMetadataDiv = document.getElementById("sample-metadata");
@@ -35,6 +55,7 @@ function displayMetadata(selectedFacilityData) {
         sampleMetadataDiv.appendChild(p);
     }
 }
+
 
 // Function to create a Plotly bar chart
 function createBarChart(facilityData) {
@@ -62,12 +83,30 @@ function createBarChart(facilityData) {
 
 // Function to create a Plotly pie chart
 function createPieChart(facilityData) {
-    const selectedFields = ["M", "F", "U"];
-    const labels = selectedFields;
-    const values = selectedFields.map(field => facilityData[field]);
+    const raceInfo = facilityData["Race Count"];
 
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    // Manually specify race categories
+    const raceCategories = ["Black/African American", "Multi-racial", "Other Race", "White"];
 
+    //Initialize an object to store counts for each category
+    const raceCounts={};
+
+    // Using regular expression to extract race categories and counts
+    raceCategories.forEach(category => {
+        const regex = new RegExp(`${category}\\s\\((\\d+)\\)`);
+        const match = raceInfo.match(regex);
+        const count = match ? parseInt(match[1], 10) : 0;
+        raceCounts[category] = count;
+    });
+    
+    //Create array of objects from the raceCounts object
+    const raceData=Object.keys(raceCounts).map(race => ({race, count: raceCounts[race]}));
+
+    const labels=raceData.map(entry => entry.race);
+    const values=raceData.map(entry => entry.count);
+
+    const colorScale = d3.scaleOrdinal().range(["blue", "orange", "green", "red"]);
+    
     const trace = {
         labels: labels,
         values: values,
@@ -78,7 +117,9 @@ function createPieChart(facilityData) {
     const data = [trace];
 
     const layout = {
-        title: 'Pie Chart for Race Count'
+        title: 'Pie Chart for Race Count',
+        height:400,
+        width:600
     };
 
     Plotly.newPlot('pie', data, layout);
@@ -86,7 +127,7 @@ function createPieChart(facilityData) {
 
 //Function to create a Ploty Bubble chart
 function createBubbleChart(facilityData) {
-  const selectedFields = ["Total Count", "Race Count"];
+  const selectedFields = ["Total Count", "Gender"];
   const labels = selectedFields;
 
   // Replace these placeholders with actual fields from your facilityData object
@@ -102,6 +143,9 @@ function createBubbleChart(facilityData) {
       mode: 'markers',
       marker: {
           size: sizeValues,
+          sizemode:'diameter',
+          sizeref: 0.001,
+          sixemin:1,
           color: colorScale.range()
       },
       text: labels
@@ -110,13 +154,47 @@ function createBubbleChart(facilityData) {
   const data = [trace];
 
   const layout = {
-      title: 'Bubble Chart for Gender'
+      title: 'Bubble Chart for Gender',
       // You can add other layout options if needed
   };
 
   Plotly.newPlot('bubble', data, layout);
 }
 
+//Function to create a Plotly pyramid chart for Payment Count
+function createPyramidChart(paymentCountData) {
+    if (!paymentCountData) {
+        console.error('Payment count data is undefined or null.');
+        return;
+    }
+    
+    const paymentTypes = Object.keys(paymentCountData);
+    const counts = paymentTypes.map(type => paymentCountData[type]);
+
+    // Calculate percentage values
+    const totalPayments = counts.reduce((sum, count) => sum + count, 0);
+    const percentages = counts.map(count => (count / totalPayments) * 100);
+
+    const trace = {
+        labels: paymentTypes,
+        values: percentages,
+        type: 'funnel',
+        textinfo: 'value+label',
+        marker: {
+            colors: ['#636efa', '#00cc96', '#bc5090', '#ff9966', '#ff5e5e'],
+        },
+    };
+
+    const data = [trace];
+
+    const layout = {
+        title: 'Pyramid Chart for Payment Count',
+        height: 400,
+        width: 400,
+    };
+
+    Plotly.newPlot('pyramid', data, layout);
+}
 //Function to handle change in Hospital Service Area dropdown
 function serviceAreaChanged(selectedServiceArea) {
 
@@ -142,7 +220,7 @@ async function initialize() {
     try {
         //CSV files
         const [data1, data2]= await Promise.all([
-            fetchAndParseCSV('Resources/Final_NY_data_2022.csv'),
+            fetchAndParseCSV('Resources/dashboard_data_2022.csv'),
             fetchAndParseCSV('Resources/PieChart_NY_data_2022.csv')
         ]);
 
@@ -182,6 +260,7 @@ async function initialize() {
         const dropdown3 = document.getElementById('selDataset');
         dropdown3.addEventListener('change', function () {
             const selectedFacility = this.value;
+            console.log('Selected Facility:', selectedFacility);
             const selectedFacilityData = mainData.find(item => item["Facility Name"] === selectedFacility);
         
             if (selectedFacilityData) {
@@ -189,6 +268,12 @@ async function initialize() {
                 createBarChart(selectedFacilityData);
                 createPieChart(selectedFacilityData);
                 createBubbleChart(selectedFacilityData);
+
+                //Extract and prepare data for Pyramid Chart
+                const paymentCountData= selectedFacilityData["Payment Count"];
+                const pyramidChartData=extractPaymentData(paymentCountData);
+                createPyramidChart(pyramidChartData);
+                
             } else {
                 console.error("Data not found for selected facility");
             }
