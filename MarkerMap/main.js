@@ -48,8 +48,8 @@ let myMap = L.map("map", {
           <b>Name:</b> ${feature.properties.name}<br>
           <b>Race:</b> ${feature.properties.RaceCount}<br>
           <b>Total Patients:</b> ${feature.properties.TotalPatients}<br>
-          <b>Total Charges: ${feature.properties.TotalCharges}</b>
-          <b>Total Costs: ${feature.properties.TotalCosts}</b>
+          <b>Total Charges:</b> $${feature.properties.TotalCharges}</br>
+          <b>Total Costs:</b> $${feature.properties.TotalCosts}
         `;
         layer.bindPopup(popupContent);
       }
