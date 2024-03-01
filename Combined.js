@@ -15,6 +15,29 @@ let links = [
   "Resources/Private_Insurance_MarkerMap_Data2.csv"
 ];
 
+// Function to switch to government insurance dataset
+function switchToGovernmentInsurance() {
+  // Clear existing markers from the map
+  myMap.eachLayer(function (layer) {
+    if (layer instanceof L.Marker) {
+      myMap.removeLayer(layer);
+    }
+  });
+  // Load and display government insurance data
+  loadData("Resources/Government_Insurance_MarkerMap2_Data.csv");
+}
+// Function to switch to private insurance dataset
+function switchToPrivateInsurance() {
+  // Clear existing markers from the map
+  myMap.eachLayer(function (layer) {
+    if (layer instanceof L.Marker) {
+      myMap.removeLayer(layer);
+    }
+  });
+  // Load and display private insurance data
+  loadData("Resources/Private_Insurance_MarkerMap_Data2.csv");
+}
+
 // Loop to get data from each link
 links.forEach(link => {
   d3.csv(link).then(function(data) {
