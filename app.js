@@ -1,289 +1,230 @@
-// Function to fetch and parse csvFilePath data
-async function fetchAndParseCSV(filePath) {
+let data1;
+
+async function fetchAndParseCSV(url) {
     try {
-        const response = await fetch(filePath);
-        const csvData = await response.text();
-        return d3.csvParse(csvData);
+        const response = await fetch(url);
+        const data = await response.text();
+        // Assign data to the global variable
+        data1 = Papa.parse(data, { header: true }).data;
+        return data1;
     } catch (error) {
-        console.error('Error loading CSV:', error);
-        throw error; // Propagate the error for further handling if needed
+        console.error('Error reading CSV files:', error);
+        throw error;  // Rethrow the error to handle it at the caller's level
     }
 }
-
-// Function to create a dropdown and populate it with unique values
-function populateDropdown(data, dropdownId, field) {
+// Function to populate the dropdown
+function populateDropdown(dropdownId, field) {
     const dropdown = document.getElementById(dropdownId);
-    const uniqueValues =[...new Set(data.map(item => item[field]))];
-    
-    //Clear existing options
-    dropdown.innerHTML ="";
 
-    //Populate dropdown with unique values
-    uniqueValues.forEach((value) => {
-        const option = new Option(value, value);
+    // Ensure data is available before populating dropdown
+    if (!data1) {
+        console.error('Data not available. Please fetch the data first.');
+        return;
+    }
+    
+    // Extract unique values for the specified field
+    const uniqueFacilities = ["", ...new Set(data1.map(item => item[field]))];
+
+    // Populate dropdown with unique values
+    uniqueFacilities.forEach((facility) => {
+        const option = new Option(facility, facility);
         dropdown.add(option);
     });
 }
 
-function extractPaymentData(paymentString) {
-    const paymentData = {};
-    const regex = /\(([^)]+)\)/g;
-    let match;
+function facilityChanged(selectedFacility) {
+    // Your logic to update charts based on the selected facility
+    console.log("Selected Facility:", selectedFacility);
     
-    while((match = regex.exec(paymentString)) !==null) {
-        const [, content] = match;
-        const [type, countString] = content.split(' ').filter(str => str.trim() !== '');
-        const count= parseInt(countString, 10);
 
-        if (!isNaN(count)) {
-            paymentData[type]=count;
+    // For now, let's call a hypothetical updateCharts function
+    updateCharts(selectedFacility);
+}
+
+function updateCharts(selectedFacility) {
+    
+    // Your logic to update charts based on the selected facility
+    console.log("Updating charts for Facility:", selectedFacility);
+    
+    // Implement chart updates using the selectedFacility parameter
+    const selectedFacilityData = data1.filter(item => item['Facility Name'] === selectedFacility);
+
+    // Extract values for the bar chart
+    const aprMDCDescription = selectedFacilityData.map(item => item['APR MDC Description']);
+    const totalCost = selectedFacilityData.map(item => item['Total Cost']);
+    const totalCharges = selectedFacilityData.map(item => item['Total Charges']);
+    const count=selectedFacilityData.map(item => item['count']);
+    // Create bar chart
+    const trace1 = {
+        x: aprMDCDescription,
+        y: totalCost,
+        type: 'bar',
+        name: 'Total Cost'
+    };
+
+    const trace2 = {
+        x: aprMDCDescription,
+        y: totalCharges,
+        type: 'bar',
+        name: 'Total Charges'
+    };
+
+    const trace3 = {
+        x: aprMDCDescription,
+        y: count,
+        type: 'bar',
+        name: 'count'
+    };
+    const layout = {
+        barmode: 'group',
+        title: `Total Cost and Total Charges for ${selectedFacility}`,
+        xaxis: {
+            x:"hide",
+            title: ''
+        },
+        yaxis: {
+            title: 'Amount'
+        },
+        bargap: 0.1,
+        width: 800,  // Adjust the width as needed
+        height: 600
+    };
+
+    const chartData = [trace1, trace2, trace3];
+
+    // Update or create the chart div
+    Plotly.newPlot('bar', chartData, layout);
+
+    //Pyramid chart
+   
+    // Reverse the data for ascending order
+    const count2 = selectedFacilityData.map(item => item['count']);
+    const aprMDCDescriptionData = selectedFacilityData.map(item => item['APR MDC Description']);
+
+    const sortedData = count2.sort((a,b) => b - a);
+    const top10Data = sortedData.slice(0, 10);
+    // Create trace for the pyramid chart
+    const trace = {
+        type: 'funnel',
+        x: top10Data,
+        y: aprMDCDescriptionData,
+        //textinfo: 'value',
+        marker: {
+            color: 'rgba(200, 50, 100, 0.6)',
+            line: {
+                //width: 0.1,
+                width: 0.2,  // Adjust the width as needed
+                height: 300
+            }
+        }
+    };
+
+    // Layout for the pyramid chart
+    const layout2 = {
+        title: 'Top 10 APR MDC Description- Click to show values',
+        funnelmode: 'stack',
+        showlegend: false,
+        annotations: [],
+        clickmode: 'event+select',
+        updatemenus: [{
+            type: 'buttons',
+            showactive: false,
+        }]
+    };
+
+    // Create annotations with specific values for each category
+    const annotations = top10Data.map((value, index) => ({
+        text: `${[index + 1]}: ${value.count2}`,
+        showarrow: false,
+        visible: false
+    }));
+
+    layout2.annotations = annotations;
+    
+    // Create pyramid chart
+    const chartData2 = [trace];
+    Plotly.newPlot('pyramid', chartData2, layout2);
+    
+    function toggleValuesVisibility() {
+        const pyramidChart = document.getElementById('pyramid');
+        const chartData = pyramidChart.data;
+    
+        // Toggle visibility for each annotation
+        chartData[0].annotations.forEach(annotation => {
+            annotation.visible = !annotation.visible;
+        });
+    
+        // Update the pyramid chart with the modified data
+        Plotly.update(pyramidChart, chartData2);
+    }
+
+    // Create pie chart data
+    const avr_stay = selectedFacilityData.map(item => item['Avg Length of Stay']);
+    const aprMDCDescriptionData2 = selectedFacilityData.map(item => item['APR MDC Description']);
+
+    // Sort the data based on Avg Length of Stay in descending order
+    const sortedData3 = avr_stay.map((value, index) => ({ stay: value, description: aprMDCDescriptionData2[index] }))
+        .sort((a, b) => b.stay - a.stay);
+
+    // Take the top 5 entries
+    const top10Data2 = sortedData3.slice(0, 10);
+
+    // Define five colors
+    const colors = ['rgba(200, 50, 100, 0.6)', 'rgba(100, 200, 50, 0.6)', 'rgba(50, 100, 200, 0.6)', 'rgba(150, 75, 0, 0.6)', 'rgba(0, 150, 75, 0.6)'];
+
+    // Create pie chart data for the top 5 categories
+    const pieChartData = top10Data2.map((entry, index) => ({
+    label: entry.description,
+    value: entry.stay,
+    color: colors[index]
+    }));
+
+    // Create a pie chart using Plotly
+    const trace4 = {
+    type: 'pie',
+    labels: pieChartData.map(data => data.label),
+    values: pieChartData.map(data => data.value),
+    textinfo: 'label',
+    hoverinfo: 'label+percent+value',
+    marker: {
+        colors: pieChartData.map(data => data.color),
+        line: {
+        width: 0.2
         }
     }
-
-    console.log(paymentData);
-    
-    return paymentData;
-    
-}
-// Function to create and display metadata information
-function displayMetadata(selectedFacilityData) {
-    const sampleMetadataDiv = document.getElementById("sample-metadata");
-    sampleMetadataDiv.innerHTML = "";
-    for (const key in selectedFacilityData) {
-        const p= document.createElement("p");
-        p.textContent = `${key}: ${selectedFacilityData[key]}`;
-        sampleMetadataDiv.appendChild(p);
-    }
-}
-
-
-// Function to create a Plotly bar chart
-function createBarChart(facilityData) {
-    const selectedFields = ["Total Charges", "Total Costs"];
-    const labels = selectedFields;
-    const values = selectedFields.map(field => facilityData[field]);
-
-    const trace = {
-        x: labels,
-        y: values,
-        type: 'bar',
-        marker: { color: 'blue' }
     };
-
-    const data = [trace];
-
-    const layout = {
-        title: 'Bar Chart for Selected Facility',
-        xaxis: { title: 'Categories' },
-        yaxis: { title: 'Values' }
-    };
-
-    Plotly.newPlot('bar', data, layout);
-}
-
-// Function to create a Plotly pie chart
-function createPieChart(facilityData) {
-    const raceInfo = facilityData["Race Count"];
-
-    // Manually specify race categories
-    const raceCategories = ["Black/African American", "Multi-racial", "Other Race", "White"];
-
-    //Initialize an object to store counts for each category
-    const raceCounts={};
-
-    // Using regular expression to extract race categories and counts
-    raceCategories.forEach(category => {
-        const regex = new RegExp(`${category}\\s\\((\\d+)\\)`);
-        const match = raceInfo.match(regex);
-        const count = match ? parseInt(match[1], 10) : 0;
-        raceCounts[category] = count;
-    });
-    
-    //Create array of objects from the raceCounts object
-    const raceData=Object.keys(raceCounts).map(race => ({race, count: raceCounts[race]}));
-
-    const labels=raceData.map(entry => entry.race);
-    const values=raceData.map(entry => entry.count);
-
-    const colorScale = d3.scaleOrdinal().range(["blue", "orange", "green", "red"]);
-    
-    const trace = {
-        labels: labels,
-        values: values,
-        type: 'pie',
-        marker: { colors: colorScale.range() }
-    };
-
-    const data = [trace];
-
-    const layout = {
-        title: 'Pie Chart for Race Count',
-        height:400,
-        width:600
-    };
-
-    Plotly.newPlot('pie', data, layout);
-}
-
-//Function to create a Ploty Bubble chart
-function createBubbleChart(facilityData) {
-  const selectedFields = ["Total Count", "Gender"];
-  const labels = selectedFields;
-
-  // Replace these placeholders with actual fields from your facilityData object
-  const xValues = selectedFields.map(field => facilityData[field]); 
-  const yValues = selectedFields.map(field => facilityData[field]); 
-  const sizeValues = selectedFields.map(field => facilityData[field]); 
-
-  const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-
-  const trace = {
-      x: xValues,
-      y: yValues,
-      mode: 'markers',
-      marker: {
-          size: sizeValues,
-          sizemode:'diameter',
-          sizeref: 0.001,
-          sixemin:1,
-          color: colorScale.range()
-      },
-      text: labels
-  };
-
-  const data = [trace];
-
-  const layout = {
-      title: 'Bubble Chart for Gender',
-      // You can add other layout options if needed
-  };
-
-  Plotly.newPlot('bubble', data, layout);
-}
-
-//Function to create a Plotly pyramid chart for Payment Count
-function createPyramidChart(paymentCountData) {
-    if (!paymentCountData) {
-        console.error('Payment count data is undefined or null.');
-        return;
-    }
-    
-    const paymentTypes = Object.keys(paymentCountData);
-    const counts = paymentTypes.map(type => paymentCountData[type]);
-
-    // Calculate percentage values
-    const totalPayments = counts.reduce((sum, count) => sum + count, 0);
-    const percentages = counts.map(count => (count / totalPayments) * 100);
-
-    const trace = {
-        labels: paymentTypes,
-        values: percentages,
-        type: 'funnel',
-        textinfo: 'value+label',
-        marker: {
-            colors: ['#636efa', '#00cc96', '#bc5090', '#ff9966', '#ff5e5e'],
+    const layout4 = {
+        title: 'Top 10 Categories with Highest Avg Length of Stay',
+        showlegend: false,
+        legend:{
+            x:0.02,
+            y:0.02,
+            traceorder:'normal',
+            orientation: 'bottom',
+            font:{
+                size:10,
+            },
         },
+        autosize: false,
+        width:600,
+        height:600,
     };
 
-    const data = [trace];
-
-    const layout = {
-        title: 'Pyramid Chart for Payment Count',
-        height: 400,
-        width: 400,
-    };
-
-    Plotly.newPlot('pyramid', data, layout);
+    // Create pie chart
+    const chartData4 = [trace4];
+    Plotly.newPlot('pieChart', chartData4, layout4);
 }
-//Function to handle change in Hospital Service Area dropdown
-function serviceAreaChanged(selectedServiceArea) {
+// URLs of your CSV files
+const csvFile1 = 'Resources/Final_dashboard_df.csv';
 
-    //Filter data based on selectedServiceArea
-    console.log("Hospital Service Area changed:", selectedServiceArea);
-}
-
-//Function to handle change in Hospital county
-function countyChanged(selectedCounty) {
-    //Implement the logic for handling changes in county here
-    console.log("County changed:", selectedCounty);
-}
-
-//Function to handle change in Facility names dropdown
-function facilityChanged(selectedFacility) {
-
-    //Display detailed information for be selected
-    console.log("Facility Name changed:", selectedFacility);
-}
-
-//Reading the csv file
-async function initialize() {
-    try {
-        //CSV files
-        const [data1, data2]= await Promise.all([
-            fetchAndParseCSV('Resources/dashboard_data_2022.csv'),
-            fetchAndParseCSV('Resources/PieChart_NY_data_2022.csv')
-        ]);
-
-        //Combine the data from both files
-        mainData=data1.concat(data2);
-        //Populate the dropdown Hospital Service Area
-        populateDropdown(mainData, 'anotherDropdown', 'Hospital Service Area');
-        
-        //First dropdown Hospital Service Area
-        const dropdown1 = document.getElementById('anotherDropdown');
-        dropdown1.addEventListener("change", function () {
-            const selectedServiceArea =this.value;
-            serviceAreaChanged(selectedServiceArea);
+// Fetch and parse CSV data for the first file
+fetchAndParseCSV(csvFile1)
+    .then(() => {
             
-            //Filter data for the selected service area
-            const filteredCountyData=mainData.filter(item => item ["Hospital Service Area"] === selectedServiceArea);
-
-            //Populate the second dropdown (Hospital County) based on the filtered data
-            populateDropdown(filteredCountyData, 'anotherDropdown2', 'Hospital County');
-
-            //Clear the third dropdown (Facility Names)
-            document.getElementById('selDataset').innerHTML ="";
-        });
-        
-        //Listener for the second dropdown (Hospital County)
-        const dropdown2= document.getElementById('anotherDropdown2');
-        dropdown2.addEventListener("change", function () {
-            const selectedCounty= this.value;
-            countyChanged(selectedCounty);
-
-            //Filter data for the selected conty
-            const filteredFacilityData = mainData.filter(item => item["Hospital County"] === selectedCounty);
-            populateDropdown(filteredFacilityData, 'selDataset', 'Facility Name');
-        });
-
-        //Listener for the third dropdown (Facility Names)
-        const dropdown3 = document.getElementById('selDataset');
-        dropdown3.addEventListener('change', function () {
-            const selectedFacility = this.value;
-            console.log('Selected Facility:', selectedFacility);
-            const selectedFacilityData = mainData.find(item => item["Facility Name"] === selectedFacility);
-        
-            if (selectedFacilityData) {
-                displayMetadata(selectedFacilityData);
-                createBarChart(selectedFacilityData);
-                createPieChart(selectedFacilityData);
-                createBubbleChart(selectedFacilityData);
-
-                //Extract and prepare data for Pyramid Chart
-                const paymentCountData= selectedFacilityData["Payment Count"];
-                const pyramidChartData=extractPaymentData(paymentCountData);
-                createPyramidChart(pyramidChartData);
-                
-            } else {
-                console.error("Data not found for selected facility");
-            }
-        });
-
-    } catch (error) {
-        console.error('Error initializing:', error);
-        // Handle errors if necessary
-    }
-}
-
-// Call the main execution logic
-initialize();
+    // Populate the Facility Name dropdown
+    populateDropdown('selDataset', 'Facility Name');
+    })
+    
+    .catch(error => {
+        console.error('Error reading CSV files:', error);
+    });
