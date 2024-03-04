@@ -12,6 +12,8 @@ https://healthdata.gov/State/Hospital-Inpatient-Discharges-SPARCS-De-Identified/
 
 # Group Members 
 Dave Burgman, Esha Patel, Kamilla Ribeiro
+
+# Hypothesis 
  
 ### PROJECT OUTINE
 
@@ -32,14 +34,15 @@ Dave Burgman, Esha Patel, Kamilla Ribeiro
 
 3. Descriptive Statistics:
 
-Summary statistics can be calculated for numerical variables like total charges and total costs.
-Categorical variables such as gender, race, and payment typologies can be analyzed for frequency distributions.
+Summary statistics can be calculated for numerical variables like total charges and total costs. Categorical variables such as gender, race, and payment typologies can be analyzed for frequency distributions.
 
 4. Visualization:
 
 - We have created 3 Heatmaps to visualize the distribution of payment typologies across different healthcare facilities. First heat map shows government insurance such as Medicaid, Medicare, Etc. Second heathmap shows us private insurance. The last heat map shows us other type of payments such as self pay, etc. The geographic plot can be used to visualize the location of healthcare facilities in New York State.
 
-- On our dashboard, we have created three levels of dropdown menus in the following order: Hospital Service Area, Hospital County, and Facility Names. Once you choose a option for all three levels, you get the Demographic information such as gender count, Facility Name, Total count of patients, Race, Total Charges, Total Costs, Latitude, Logitude and Payment Type details. For Visulaizations, there is a Bar chart that shows the Total charges and Total Costs per Facility. There  Pie charts show the distirbiution of gender. The Pyramid Chart shows APR MDC Description per Hospital to rank from most common to least common cause of admission in a particular hospital.
+- On our dashboard, we have created a dropdown menus for Facility Names. Once you choose a option for Facility name, you will get a bar chart showing the total cost, total charges and total count per MDC Description. You will also be able to see a Pyramid chart with the top 10 APR MDC Description to see the most and least likey reason someone was admitted into the hospital. Last, you will see a pie chart that shows the average length of stay per APR MDC Description per facility. 
+
+- We have created marker maps which show us the governmenet and private insurance per hospital. It shows the average length of stay, average total costs and and average total charges for the insurance type. 
 
 
 5. Trends and Patterns:
@@ -62,5 +65,37 @@ We can analyze the distribution of diagnoses (APR MDC descriptions) and procedur
 Visualizing the frequency of diagnoses and procedures can help us identify patterns in healthcare utilization.
 
 #### Data Visulaization:
+
+- Marker Maps
+
+Government Insurance
+
+![output](Government_Marker_Map.png)
+
+Private Insurance 
+
+![output](Private_Marker_Map.png)
+
+
+- Dashboard
+
+![output](Dashboard_1.png)
+![output](Dashboard_2.png)
+![output](Dashboard_3.png)
+
+
+- Heat Maps
+
+Government Insurance
+
+![output](Government_Insurance_HeatMap.png)
+
+Private Insurance 
+
+![output](Private_Insurance_HeatMap.png)
+
+Other Insurance Types
+
+![output](Other_Type_Payments_HeatMap.png)
 
 
