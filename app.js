@@ -110,7 +110,7 @@ function updateCharts(selectedFacility) {
         y: aprMDCDescriptionData,
         //textinfo: 'value',
         marker: {
-            color: 'rgba(200, 50, 100, 0.6)',
+            color: 'blue',
             line: {
                 //width: 0.1,
                 width: 0.2,  // Adjust the width as needed
